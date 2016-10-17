@@ -1,78 +1,78 @@
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <string>
-#include <vector>
+/*
+ Name:		StepperArm_Arduino.ino
+ Created:	10/15/2016 11:48:24 AM
+ Author:	Paul
 
 
-void check_program_arguments(int argc) {
-	if (argc != 2) {
-		std::cout << "Error! Program usage:" << std::endl;
-		std::cout << "./circle_detect image_circles_path" << std::endl;
-		std::exit(-1);
-	}
+ 3 stepper 
+ 2 servo (or 3... variable end affector)
+*/
+#include "AccelStepper\AccelStepper.h"
+#include <Servo.h>
+#include <Stepper.h>
+#include <math.h>
+
+#define MOTOR_STEPS 400
+#define STEP_DEGREE 360/MOTOR_STEPS //.9
+#define STEP_RADIAN STEP_DEGREE*(PI/180) //0.0157079633
+
+const byte baseStepperDir	= 1;
+const byte baseStepperStep	= 2;
+AccelStepper baseStepper(1, baseStepperStep, baseStepperDir);
+
+const byte acmeStepperDir	= 1;
+const byte acmeStepperStep	= 2;
+AccelStepper acmeStepper(1, acmeStepperStep, acmeStepperDir);
+
+
+const byte linearStepperDir	= 1;
+const byte linearStepperStep = 2;
+AccelStepper linearStepper(1, linearStepperStep, linearStepperDir);
+
+
+/*
+TODO WORK ON END
+*/
+const byte grabServoPin = 1;
+const byte rotateServoPin = 1;
+
+const byte raiseServoPin = 1;
+
+const byte solenoidRelayPin = 1;
+
+const byte verticalSwitch = 1;
+const byte baseSwitch = 1;
+const byte extensionSwitch = 1;
+
+int byteXYIn;
+int byteXYOut;
+
+int xCoord;//(in-in%1000)/1000
+int yCoord;//in%1000
+
+
+void setup() {
+	Serial.begin(9600);
+	pinMode(solenoidRelayPin, OUTPUT);
+
 }
 
-void check_if_image_exist(const cv::Mat &img, const std::string &path) {
-	if (img.empty()) {
-		std::cout << "Error! Unable to load image: " << path << std::endl;
-		std::exit(-1);
-	}
+void loop() {
+  
 }
 
+void stepperInit() {
+	baseStepper.setMaxSpeed(3000);
+	acmeStepper.setMaxSpeed(3000);
+	linearStepper.setMaxSpeed(3000);
 
-int main(int argc, char **argv) {
-	check_program_arguments(argc);
+	baseStepper.setAcceleration(1000);
+	acmeStepper.setAcceleration(1000);
+	linearStepper.setAcceleration(1000);
+}
 
-	std::string path_image{ argv[1] };
-	cv::Mat bgr_image = cv::imread(path_image);
-
-	check_if_image_exist(bgr_image, path_image);
-
-	cv::Mat orig_image = bgr_image.clone();
-
-	cv::medianBlur(bgr_image, bgr_image, 3);
-
-	// Convert input image to HSV
-	cv::Mat hsv_image;
-	cv::cvtColor(bgr_image, hsv_image, cv::COLOR_BGR2HSV);
-
-	// Threshold the HSV image, keep only the red pixels
-	cv::Mat lower_red_hue_range;
-	cv::Mat upper_red_hue_range;
-	cv::inRange(hsv_image, cv::Scalar(0, 100, 100), cv::Scalar(10, 255, 255), lower_red_hue_range);
-	cv::inRange(hsv_image, cv::Scalar(160, 100, 100), cv::Scalar(179, 255, 255), upper_red_hue_range);
-
-	// Combine the above two images
-	cv::Mat red_hue_image;
-	cv::addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_image);
-
-	cv::GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
-
-	// Use the Hough transform to detect circles in the combined threshold image
-	std::vector<cv::Vec3f> circles;
-	cv::HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 100, 20, 0, 0);
-
-	// Loop over all detected circles and outline them on the original image
-	if (circles.size() == 0) std::exit(-1);
-	for (size_t current_circle = 0; current_circle < circles.size(); ++current_circle) {
-		cv::Point center(std::round(circles[current_circle][0]), std::round(circles[current_circle][1]));
-		int radius = std::round(circles[current_circle][2]);
-
-		cv::circle(orig_image, center, radius, cv::Scalar(0, 255, 0), 5);
-	}
-
-	// Show images
-	cv::namedWindow("Threshold lower image", cv::WINDOW_AUTOSIZE);
-	cv::imshow("Threshold lower image", lower_red_hue_range);
-	cv::namedWindow("Threshold upper image", cv::WINDOW_AUTOSIZE);
-	cv::imshow("Threshold upper image", upper_red_hue_range);
-	cv::namedWindow("Combined threshold images", cv::WINDOW_AUTOSIZE);
-	cv::imshow("Combined threshold images", red_hue_image);
-	cv::namedWindow("Detected red circles on the input image", cv::WINDOW_AUTOSIZE);
-	cv::imshow("Detected red circles on the input image", orig_image);
-
-	cv::waitKey(0);
-
-
-	return 0;
+void dropCalibrate() {
+	digitalWrite(solenoidRelayPin, HIGH);
+	delay(3);
+	
 }
