@@ -21,14 +21,11 @@ void check_if_image_exist(const cv::Mat &img, const std::string &path) {
 
 
 int main(int argc, char **argv) {
-	// Usage: ./circle_detect image_circles_path
 	check_program_arguments(argc);
 
-	// Load input image
 	std::string path_image{ argv[1] };
 	cv::Mat bgr_image = cv::imread(path_image);
 
-	// Check if the image can be loaded
 	check_if_image_exist(bgr_image, path_image);
 
 	cv::Mat orig_image = bgr_image.clone();
