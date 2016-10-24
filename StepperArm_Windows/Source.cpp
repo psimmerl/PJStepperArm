@@ -1,229 +1,123 @@
-/**
-* @file HoughCircle_Demo.cpp
-* @brief Demo code for Hough Transform
-* @author OpenCV team
-*/
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include <iostream>
-
-using namespace std;
-using namespace cv;
-
-namespace
-{
-	// windows and trackbars name
-	const std::string windowName = "Hough Circle Detection Demo";
-	const std::string cannyThresholdTrackbarName = "Canny threshold";
-	const std::string accumulatorThresholdTrackbarName = "Accumulator Threshold";
-	const std::string usage = "Usage : tutorial_HoughCircle_Demo <path_to_input_image>\n";
-
-	// initial and max values of the parameters of interests.
-	const int cannyThresholdInitialValue = 200;
-	const int accumulatorThresholdInitialValue = 50;
-	const int maxAccumulatorThreshold = 200;
-	const int maxCannyThreshold = 255;
-
-	void HoughDetection(const Mat& src_gray, const Mat& src_display, int cannyThreshold, int accumulatorThreshold)
-	{
-		// will hold the results of the detection
-		std::vector<Vec3f> circles;
-		// runs the actual detection
-		HoughCircles(src_gray, circles, HOUGH_GRADIENT, 1, src_gray.rows / 8, cannyThreshold, accumulatorThreshold, 0, 0);
-
-		// clone the colour, input image for displaying purposes
-		Mat display = src_display.clone();
-		for (size_t i = 0; i < circles.size(); i++)
-		{
-			Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-			int radius = cvRound(circles[i][2]);
-			// circle center
-			circle(display, center, 3, Scalar(0, 255, 0), -1, 8, 0);
-			// circle outline
-			circle(display, center, radius, Scalar(0, 0, 255), 3, 8, 0);
-		}
-
-		// shows the results
-		imshow(windowName, display);
-	}
-}
-
-
-int main(int argc, char** argv)
-{
-	VideoCapture cap(1);
-	if (!cap.isOpened()) {
-		cap.release();
-		cap.open(0);
-		if (!cap.isOpened())
-			return -1;
-	}
-
-	Mat src, src_gray;
-
-	cap >> src;
-	
-	/*if (argc < 2)
-	{
-		std::cerr << "No input image specified\n";
-		std::cout << usage;
-		return -1;
-	}
-
-	// Read the image
-	src = imread(argv[1], 1);
-
-	if (src.empty())
-	{
-		std::cerr << "Invalid input image\n";
-		std::cout << usage;
-		return -1;
-	}*/
-	
-
-	// Convert it to gray
-	cvtColor(src, src_gray, COLOR_BGR2GRAY);
-
-	// Reduce the noise so we avoid false circle detection
-	GaussianBlur(src_gray, src_gray, Size(9, 9), 2, 2);
-
-	//declare and initialize both parameters that are subjects to change
-	int cannyThreshold = cannyThresholdInitialValue;
-	int accumulatorThreshold = accumulatorThresholdInitialValue;
-
-	// create the main window, and attach the trackbars
-	namedWindow(windowName, WINDOW_AUTOSIZE);
-	createTrackbar(cannyThresholdTrackbarName, windowName, &cannyThreshold, maxCannyThreshold);
-	createTrackbar(accumulatorThresholdTrackbarName, windowName, &accumulatorThreshold, maxAccumulatorThreshold);
-
-	// infinite loop to display
-	// and refresh the content of the output image
-	// until the user presses q or Q
-	int key = 0;
-	while (key != 'q' && key != 'Q')
-	{
-		cap >> src;
-		cvtColor(src, src_gray, CV_BGR2GRAY);
-		GaussianBlur(src_gray, src_gray, Size(9, 9), 2, 2);
-		// those paramaters cannot be =0
-		// so we must check here
-		cannyThreshold = std::max(cannyThreshold, 1);
-		accumulatorThreshold = std::max(accumulatorThreshold, 1);
-
-		//runs the detection, and update the display
-		HoughDetection(src_gray, src, cannyThreshold, accumulatorThreshold);
-
-		// get user key
-		key = waitKey(10);
-	}
-
-	return 0;
-}
-
-/*
+#include <opencv2\opencv.hpp>
 #include <iostream>
 #include <string>
-#include <opencv2/opencv.hpp>
+#include <vector>
+#include <ctime>
+#include <stdlib.h>
 
-using namespace cv;
-using namespace std;
-
+#include "SerialClass.h"
 
 int main() {
-	VideoCapture cap(0);
-	if (!cap.isOpened())
-		return -1;
 
-	//WINDOWS
-	namedWindow("Edges Image", WINDOW_AUTOSIZE);
-	namedWindow("Original Image", WINDOW_AUTOSIZE);
-
-	Mat bgrImage;
-	Mat edges;
-
-	int keyPress = -1;
-
-	while (keyPress == -1) {
-		Mat frame;
-		cap >> frame;
-		bgrImage = frame.clone();
-	
-		cvtColor(frame, edges, CV_BGR2GRAY);
-
-		GaussianBlur(edges, edges, Size(9, 9), 1.5, 1.5);
-		Canny(edges, edges, 0, 30, 3);
-
-		vector<Vec3f> circles;
-
-		HoughCircles(edges, circles, CV_HOUGH_GRADIENT, 1, edges.rows / 8, 200, 100);
-		
-
-		for (size_t i = 0; i < circles.size(); i++) {
-			Point center(round(circles[i][0]), round(circles[i][1]));
-			int radius = round(circles[i][2]);
-			circle(bgrImage, center, radius, Scalar(0, 255, 0), 1, 4);
-		}
-		imshow("Original Image", bgrImage);
-		imshow("Edges Image", edges);
-		keyPress = waitKey(10);
-
-	}
 	return 0;
 }
 
-//Using color and shape - Does not work
-/*int main() {
-	VideoCapture cap(0);
-	//cap.set....
-	//cap.set(CAP_PROP_FPS, 20);
-	//cap.set(CV_CAP_PROP_BUFFERSIZE, 3);
+
+
+
+/*#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <string>
+#include <vector>
+
+void check_program_arguments(int argc) {
+	if (argc != 2) {
+		std::cout << "Error! Program usage:" << std::endl;
+		std::cout << "./circle_detect image_circles_path" << std::endl;
+		std::exit(-1);
+	}
+}
+
+void check_if_image_exist(const cv::Mat &img, const std::string &path) {
+	if (img.empty()) {
+		std::cout << "Error! Unable to load image: " << path << std::endl;
+		std::exit(-1);
+	}
+}
+
+
+int main(int argc, char **argv) {
+	// Usage: ./circle_detect image_circles_path
+	check_program_arguments(argc);
+
+	// Load input image
+	std::string path_image{ argv[1] };
+
+	cv::VideoCapture cap(0);
+	cap.set(CV_CAP_PROP_BUFFERSIZE, 1);
+	cap.set(CV_CAP_PROP_FPS, 60);
 	if (!cap.isOpened())
 		return -1;
 
-	Mat bgr_image;
+	//cv::Mat frame;
+	cv::Mat bgr_image;
+//	cv::namedWindow("Threshold lower image", cv::WINDOW_AUTOSIZE);
+	//cv::imshow("Threshold lower image", lower_red_hue_range);
+//	cv::namedWindow("Threshold upper image", cv::WINDOW_AUTOSIZE);
+	//cv::imshow("Threshold upper image", upper_red_hue_range);
+	cv::namedWindow("Combined threshold images", cv::WINDOW_AUTOSIZE);
+	//cv::imshow("Combined threshold images", red_hue_image);
+	cv::namedWindow("Detected red circles on the input image", cv::WINDOW_AUTOSIZE);
+	//cv::imshow("Detected red circles on the input image", orig_image);
+	while (true) {
 
-	//WINDOWS
-	namedWindow("HSV Image", WINDOW_AUTOSIZE);
-	namedWindow("Orignal Image", WINDOW_AUTOSIZE);
-
-	int pressedKey = -1;
-
-	while (pressedKey == -1) {
 		cap >> bgr_image;
 
-		medianBlur(bgr_image, bgr_image, 3);
-		Mat newImage = bgr_image.clone();
+		//cv::Mat bgr_image = frame.clone();/*cv::imread(path_image);
 
-		//GaussianBlur(newImage, newImage, Size(9, 9), 2, 2, 4);
+	//	cv::Mat bgr_image = cv::imread(path_image);
 
-		Point cent((newImage.cols)/2, (newImage.rows)/2);
-		circle(newImage, cent, 30, Scalar(255, 0, 0), 2);
+		// Check if the image can be loaded
+	//	check_if_image_exist(bgr_image, path_image);
 
-		Mat hsvImage;
-		cvtColor(bgr_image, hsvImage, COLOR_BGR2HSV);
+		cv::Mat orig_image = bgr_image.clone();
 
-		Mat pennyHueRange;
-		inRange(hsvImage, Scalar(20, 255, 255), Scalar(40, 255, 255), pennyHueRange);
+		cv::medianBlur(bgr_image, bgr_image, 3);
 
-		GaussianBlur(pennyHueRange, pennyHueRange, Size(9, 9), 2, 2, 4);
+		// Convert input image to HSV
+		cv::Mat hsv_image;
+		cv::cvtColor(bgr_image, hsv_image, cv::COLOR_BGR2HSV);
 
-		vector<Vec3f> circles;
-		HoughCircles(pennyHueRange, circles, CV_HOUGH_GRADIENT, 1, pennyHueRange.rows / 8, 100, 20, 0, 0);
-		
-		for (size_t currentCircle = 0; currentCircle < circles.size(); ++currentCircle) {
-			Point center(round(circles[currentCircle][0]), round(circles[currentCircle][1]));
-			int radius = round(circles[currentCircle][2]);
-			circle(newImage, center, radius, Scalar(0, 255, 0), 5);
-			//circle(pennyHueRange, center, radius, Scalar(0, 0, 255), 5);
+		// Threshold the HSV image, keep only the red pixels
+		cv::Mat lower_red_hue_range;
+		cv::Mat upper_red_hue_range;
+		cv::inRange(hsv_image, cv::Scalar(0, 100, 100), cv::Scalar(10, 255, 255), lower_red_hue_range);
+		cv::inRange(hsv_image, cv::Scalar(160, 100, 100), cv::Scalar(179, 255, 255), upper_red_hue_range);
 
+		// Combine the above two images
+		cv::Mat red_hue_image;
+		cv::addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_image);
+
+		cv::GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
+
+		// Use the Hough transform to detect circles in the combined threshold image
+		std::vector<cv::Vec3f> circles;
+		cv::HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 100, 20, 0, 0);
+
+		// Loop over all detected circles and outline them on the original image
+		//if (circles.size() == 0) std::exit(-1);
+		for (size_t current_circle = 0; current_circle < circles.size(); ++current_circle) {
+			cv::Point center(std::round(circles[current_circle][0]), std::round(circles[current_circle][1]));
+			int radius = std::round(circles[current_circle][2]);
+			cv::circle(orig_image, center, radius, cv::Scalar(0, 255, 0), 5);
 		}
-		imshow("pennyHueRange", pennyHueRange);
 
-		imshow("HSV Image", hsvImage);
-		imshow("Orignal Image", newImage);
-		pressedKey = waitKey(5);
+		// Show images
+		//cv::namedWindow("Threshold lower image", cv::WINDOW_AUTOSIZE);
+	//	cv::imshow("Threshold lower image", lower_red_hue_range);
+		//cv::namedWindow("Threshold upper image", cv::WINDOW_AUTOSIZE);
+	//	cv::imshow("Threshold upper image", upper_red_hue_range);
+		//cv::namedWindow("Combined threshold images", cv::WINDOW_AUTOSIZE);
+		cv::imshow("Combined threshold images", red_hue_image);
+		//cv::namedWindow("Detected red circles on the input image", cv::WINDOW_AUTOSIZE);
+		cv::imshow("Detected red circles on the input image", orig_image);
+
+
+
+		cv::waitKey(1);
+
 	}
+
+
 	return 0;
-}
-*/
+}*/
